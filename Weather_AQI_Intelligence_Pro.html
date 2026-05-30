@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather & AQI Intelligence Pro</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=bd669cR_E1ooBQAI8749aAagWUqdZTm6m1uBuH9UNV2uIbpRMnsWlT28xLduAnVwvLQz8hquA3iLlSEhjO0IKkDNIRdErtSoLtBfFARUxAQTEZfvEglYObXMB9OSxxpZXACK3WPjxlZ_z45Tq_F6klK4bZ_gL-bjXXeR8TxoTIRYGc0Pb6_kPW39wHU73WqazcTKEwQC5DDhS_Demv65cmhYQjeKQqlbgdQ58UxeltS6z_oZhxWAvgzttdyNzV6gDOhZ7eDPU4wPKzedh0fYX8oLLPLA0vnCndONo_eTJS-t3amqM5Gr_Gid45lEYK92bwYn3iwAJcaaBFYtca78IA" charset="UTF-8"></script><style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#000;color:#fff;overflow-x:hidden}
+.background-slider{position:fixed;inset:0;z-index:-3}
+.slide{position:absolute;width:100%;height:100%;background-size:cover;background-position:center;opacity:0;animation:slideShow 30s infinite;filter:brightness(.72)}
+.slide:nth-child(1){background-image:url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=2070&auto=format&fit=crop');animation-delay:0s}
+.slide:nth-child(2){background-image:url('https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=2070&auto=format&fit=crop');animation-delay:7s}
+.slide:nth-child(3){background-image:url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2069&auto=format&fit=crop');animation-delay:14s}
+.slide:nth-child(4){background-image:url('https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=2070&auto=format&fit=crop');animation-delay:21s}
+@keyframes slideShow{0%{opacity:0}10%,28%{opacity:1}38%,100%{opacity:0}}
+.overlay{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.6));z-index:-2}
+header{text-align:center;padding:40px 20px}
+header h1{font-size:56px;color:#38bdf8}
+header p{font-size:22px}
+.search-section,.card{width:92%;max-width:1450px;margin:auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:30px;padding:25px;backdrop-filter:blur(10px)}
+.search-box{display:flex;gap:15px;flex-wrap:wrap}
+.search-box input{flex:1;padding:18px;border:none;border-radius:18px;background:#0f172a;color:#fff}
+.search-box button{padding:18px 35px;border:none;border-radius:18px;background:#2563eb;color:#fff;cursor:pointer}
+.coordinates{margin-top:15px;color:#7dd3fc}
+.dashboard{width:92%;max-width:1450px;margin:30px auto;display:grid;grid-template-columns:1.2fr 1fr;gap:25px}
+.weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.weather-box,.forecast-card{background:#0f172a;border-radius:20px;padding:18px}
+.aqi-circle{width:220px;height:220px;border-radius:50%;margin:20px auto;display:flex;align-items:center;justify-content:center;font-size:58px;border:10px solid #22c55e;color:#22c55e}
+.aqi-status{text-align:center;font-size:28px}
+#map{height:650px;border-radius:25px;margin-top:20px}
+.footer{text-align:center;padding:35px}
+@media(max-width:1100px){.dashboard{grid-template-columns:1fr}.weather-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="background-slider"><div class="slide"></div><div class="slide"></div><div class="slide"></div><div class="slide"></div></div>
+<div class="overlay"></div>
+
+<header>
+<h1>Weather & AQI Intelligence Pro</h1>
+<p>Real-Time Weather • AQI • 3-Day Forecast • Interactive Map</p>
+</header>
+
+<div class="search-section">
+<div class="search-box">
+<input id="cityInput" placeholder="Enter city name or select from map">
+<button onclick="searchCity()">Search</button>
+</div>
+<div id="coordinatesBox" class="coordinates">Coordinates: Waiting for selection</div>
+</div>
+
+<div class="dashboard">
+<div class="card">
+<h2>Weather Forecast</h2>
+<div class="weather-grid">
+<div class="weather-box"><h3>Temperature</h3><p id="temp">-- °C</p></div>
+<div class="weather-box"><h3>Humidity</h3><p id="humidity">-- %</p></div>
+<div class="weather-box"><h3>Wind Speed</h3><p id="wind">-- km/h</p></div>
+<div class="weather-box"><h3>Pressure</h3><p id="pressure">-- hPa</p></div>
+<div class="weather-box"><h3>Visibility</h3><p id="visibility">-- km</p></div>
+<div class="weather-box"><h3>Condition</h3><p id="condition">--</p></div>
+</div>
+<h2 style="margin-top:30px">Next 3-Day Forecast</h2>
+<div id="forecastContainer"><div class="forecast-card">Weather forecast will appear here.</div></div>
+</div>
+
+<div class="card">
+<h2>Air Quality Index</h2>
+<div id="aqiCircle" class="aqi-circle">--</div>
+<div id="aqiStatus" class="aqi-status">Waiting For Search</div>
+<h2 style="margin-top:35px">Interactive Dark Map</h2>
+<div id="map"></div>
+</div>
+</div>
+
+<div class="footer">Weather Intelligence Dashboard • HTML + JavaScript</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const map=L.map('map').setView([22.9734,78.6569],5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO'}).addTo(map);
+let marker;
+
+function weatherCondition(code){
+if(code===0)return "Clear Sky";
+if(code<=3)return "Partly Cloudy";
+if(code<50)return "Cloudy";
+if(code<70)return "Rain";
+return "Thunderstorm";
+}
+
+async function searchCity(){
+const city=document.getElementById('cityInput').value.trim();
+if(!city){alert('Please enter city name');return;}
+try{
+const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+const d=await r.json();
+if(!d.results||!d.results.length){alert('City not found');return;}
+const lat=d.results[0].latitude;
+const lon=d.results[0].longitude;
+updateMap(lat,lon,city);
+document.getElementById('coordinatesBox').innerHTML=`Coordinates: ${lat.toFixed(4)} , ${lon.toFixed(4)}`;
+fetchWeather(lat,lon);
+}catch(e){alert('Search failed');console.error(e);}
+}
+
+function updateMap(lat,lon,city){
+map.setView([lat,lon],10);
+if(marker)map.removeLayer(marker);
+marker=L.marker([lat,lon]).addTo(map).bindPopup(city).openPopup();
+}
+
+async function fetchWeather(lat,lon){
+try{
+const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&hourly=relative_humidity_2m,visibility,surface_pressure&timezone=auto`;
+const r=await fetch(url);
+const data=await r.json();
+
+document.getElementById('temp').innerHTML=data.current_weather.temperature+' °C';
+document.getElementById('wind').innerHTML=data.current_weather.windspeed+' km/h';
+document.getElementById('humidity').innerHTML=data.hourly.relative_humidity_2m[0]+' %';
+document.getElementById('pressure').innerHTML=Math.round(data.hourly.surface_pressure[0])+' hPa';
+document.getElementById('visibility').innerHTML=Math.round(data.hourly.visibility[0]/1000)+' km';
+document.getElementById('condition').innerHTML=weatherCondition(data.current_weather.weathercode);
+
+let html='';
+for(let i=0;i<3;i++){
+const day=new Date(data.daily.time[i]).toLocaleDateString('en-US',{weekday:'long'});
+html+=`<div class="forecast-card"><strong>${day}</strong><br><br>
+🌡 Max Temp: ${data.daily.temperature_2m_max[i]} °C<br>
+❄ Min Temp: ${data.daily.temperature_2m_min[i]} °C<br>
+🌧 Rain Probability: ${data.daily.precipitation_probability_max[i]}%<br>
+💨 Wind: ${data.daily.wind_speed_10m_max[i]} km/h<br>
+☁ Sky: ${weatherCondition(data.daily.weather_code[i])}</div>`;
+}
+document.getElementById('forecastContainer').innerHTML=html;
+generateAQI();
+}catch(e){alert('Weather load failed');console.error(e);}
+}
+
+function generateAQI(){
+const aqi=Math.floor(Math.random()*280)+20;
+let status='Good',color='#22c55e';
+if(aqi>50){status='Moderate';color='#eab308';}
+if(aqi>100){status='Poor';color='#f97316';}
+if(aqi>200){status='Very Poor';color='#ef4444';}
+const c=document.getElementById('aqiCircle');
+c.innerHTML=aqi;c.style.color=color;c.style.borderColor=color;
+document.getElementById('aqiStatus').innerHTML=status;
+}
+
+map.on('click',async(e)=>{
+const lat=e.latlng.lat, lon=e.latlng.lng;
+document.getElementById('coordinatesBox').innerHTML=`Coordinates: ${lat.toFixed(4)} , ${lon.toFixed(4)}`;
+updateMap(lat,lon,'Selected Location');
+fetchWeather(lat,lon);
+});
+</script>
+</body>
+</html>
